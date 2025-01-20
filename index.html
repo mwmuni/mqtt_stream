@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQTT Topic Subscriber</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/mqttws31.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #messages {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>MQTT Topic Subscriber</h1>
+  <div>
+    <strong>Status:</strong> <span id="status">Disconnected</span>
+  </div>
+  <div id="messages"></div>
+
+  <script>
+    const brokerUrl = "wss://a343tlihspjv3v-ats.iot.ap-southeast-2.amazonaws.com/mqtt"; // AWS IoT Core WebSocket endpoint
+    const topics = ["3010002301040268/in", "3010002301040268/out"];
+
+    const client = new Paho.MQTT.Client(brokerUrl, "clientId-" + Math.random().toString(16).substr(2, 8));
+
+    // Display connection status
+    const statusElement = document.getElementById("status");
+    client.onConnectionLost = (response) => {
+      statusElement.textContent = "Disconnected";
+      console.error("Connection lost:", response.errorMessage);
+    };
+
+    client.onMessageArrived = (message) => {
+      const messagesDiv = document.getElementById("messages");
+      const newMessage = document.createElement("div");
+      newMessage.textContent = `Topic: ${message.destinationName}, Message: ${message.payloadString}`;
+      messagesDiv.appendChild(newMessage);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
+    };
+
+    // Connect to the broker
+    client.connect({
+      useSSL: true,
+      onSuccess: () => {
+        statusElement.textContent = "Connected";
+        console.log("Connected to broker");
+
+        // Subscribe to topics
+        topics.forEach((topic) => {
+          client.subscribe(topic);
+          console.log(`Subscribed to ${topic}`);
+        });
+      },
+      onFailure: (error) => {
+        statusElement.textContent = "Connection failed";
+        console.error("Connection failed:", error.errorMessage);
+      },
+    });
+  </script>
+</body>
+</html>
